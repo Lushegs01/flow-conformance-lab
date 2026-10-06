@@ -5,3 +5,5 @@ runs/
 coverage/
 *.log
 .env
+.repo/
+.repo2/
