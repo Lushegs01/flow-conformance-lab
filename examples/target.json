@@ -1,0 +1,9 @@
+{
+  "implementation": { "name": "Lab subset host", "version": "0.1.0" },
+  "actor_id": "actor-human-lab",
+  "unauthorized_actor_id": "actor-outsider-lab",
+  "human_worker_id": "worker-human-lab",
+  "agent_worker_id": "worker-agent-lab",
+  "policy_id": "policy-lab",
+  "auth_env": "FLOW_AUTHORIZATION"
+}

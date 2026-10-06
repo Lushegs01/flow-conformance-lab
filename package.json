@@ -1,0 +1,40 @@
+{
+  "name": "flow-conformance-lab",
+  "version": "0.1.0",
+  "description": "Independent black-box Jarvis conformance evidence; not certification",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "bin": {
+    "flow-conformance": "dist/apps/cli/index.js"
+  },
+  "scripts": {
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "build": "tsc && node scripts/build-web.mjs && node dist/scripts/export-schema.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "host:reference": "node dist/examples/host.js",
+    "host:broken": "node dist/examples/host.js --broken --port 4001",
+    "flow": "node dist/apps/cli/index.js",
+    "demo": "node dist/scripts/demo.js"
+  },
+  "dependencies": {
+    "commander": "14.0.1",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "zod": "4.1.12"
+  },
+  "devDependencies": {
+    "@types/node": "24.7.2",
+    "@types/react": "19.2.2",
+    "@types/react-dom": "19.2.2",
+    "esbuild": "0.25.11",
+    "prettier": "3.6.2",
+    "typescript": "5.9.3",
+    "vitest": "4.1.11"
+  }
+}

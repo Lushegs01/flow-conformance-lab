@@ -1,0 +1,24 @@
+{
+  "source_commit": "e0c4842a5fc62b304e0af9cbc823d0be1eb72adb",
+  "generator": "@jarvis-protocol/sdk createNextJarvisEvent",
+  "event": {
+    "id": "event-vector",
+    "sequence": 1,
+    "type": "work_session.created",
+    "work_session_id": "ws-vector",
+    "actor_id": "actor-human-vector",
+    "timestamp": "2026-10-06T00:00:00Z",
+    "payload": {
+      "object_type": "work_session",
+      "object_id": "ws-vector",
+      "action": "created"
+    },
+    "previous_hash": "hash:protocol-genesis",
+    "canonicalization": {
+      "serialization": "json-c14n",
+      "hash_method": "sha256",
+      "profile_ref": "canonicalization:v0.1"
+    },
+    "event_hash": "hash:18d7ee903cb4d8f7bb10859e3b6cc1ae42751d920b5731292bc0c4bd1cddfd27"
+  }
+}

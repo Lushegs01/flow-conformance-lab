@@ -1,0 +1,7 @@
+node_modules/
+dist/
+runs/
+.research/
+coverage/
+*.log
+.env
