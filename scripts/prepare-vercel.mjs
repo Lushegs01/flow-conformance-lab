@@ -1,9 +1,8 @@
-
 import { readFile, mkdir, copyFile, access } from "node:fs/promises";
 import { resolve } from "node:path";
 
 const artifacts = JSON.parse(
-  await readFile(resolve("runs", "demo-latest.json"), "utf8")
+  await readFile(resolve("runs", "demo-latest.json"), "utf8"),
 );
 
 if (!artifacts.broken) {
