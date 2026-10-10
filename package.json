@@ -20,7 +20,8 @@
     "host:reference": "node dist/examples/host.js",
     "host:broken": "node dist/examples/host.js --broken --port 4001",
     "flow": "node dist/apps/cli/index.js",
-    "demo": "node dist/scripts/demo.js"
+    "demo": "node dist/scripts/demo.js",
+    "vercel-build": "npm run build && npm run demo && node scripts/prepare-vercel.mjs"
   },
   "dependencies": {
     "commander": "14.0.1",
