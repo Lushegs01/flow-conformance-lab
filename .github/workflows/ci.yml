@@ -8,6 +8,9 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    env:
+      # Every step here targets loopback demo hosts only; refuse any remote target outright.
+      FLOW_CONFORMANCE_LOOPBACK_ONLY: "1"
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4, resolved 2026-10-06
         with:
