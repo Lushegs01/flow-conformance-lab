@@ -77,6 +77,9 @@ export function validateTarget(target: string, allowRemote = false): URL {
   )
     throw new TransportError("unsafe_target_url");
   const loopback = url.hostname === "127.0.0.1" || url.hostname === "[::1]";
+  // Environment kill switch for CI jobs that must never leave the machine; no flag or caller option overrides it.
+  if (!loopback && process.env.FLOW_CONFORMANCE_LOOPBACK_ONLY === "1")
+    throw new TransportError("remote_targets_disabled");
   if (!loopback && (!allowRemote || url.protocol !== "https:"))
     throw new TransportError("target_requires_explicit_remote_https");
   return url;

@@ -28,4 +28,8 @@ Do not append `|| true` to the test command: exit 1 means observed failure and e
 
 Do not expose production credentials to untrusted pull-request code, use `pull_request_target` to execute proposed code, or publish run artifacts without considering their business content. The runner redacts known secrets, but redaction is not a general confidentiality classifier.
 
-This workflow has been authored and its underlying commands verified locally. A hosted GitHub Actions run requires placing the repository on GitHub; no remote repository or hosted run was created during implementation.
+Pin `TARGET_URL` in the workflow or a protected repository variable, not in a file a pull request can change. Keep the credential in a protected GitHub Environment with required reviewers, so any job that uses it needs approval. GitHub-hosted runners cannot restrict outbound traffic; for real host credentials, prefer a self-hosted runner that applies the [recommended egress policy](security.md#recommended-egress-policy).
+
+Jobs that only build, test or run the demo should set `FLOW_CONFORMANCE_LOOPBACK_ONLY: "1"`, as the committed workflow does. The CLI then refuses every non-loopback target, even with `--allow-remote`, so a script change cannot make that job reach the network.
+
+The committed workflow runs on GitHub Actions for every push and pull request.
