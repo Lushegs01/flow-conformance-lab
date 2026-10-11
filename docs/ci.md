@@ -2,7 +2,7 @@
 
 The committed workflow builds the software, runs unit/integration/CLI tests, exercises both demo targets and retains evidence. GitHub Actions references are pinned to immutable commits resolved from the public v4 tags on 2026-10-06. Workflow permissions are read-only; checkout does not retain repository credentials.
 
-For your own host, replace the demo step with your existing isolated host startup/provisioning and readiness check, then run:
+For your own host, replace the demo step with your existing isolated host startup/provisioning and readiness check (see the [operator runbook](operator-runbook.md) for what to provision), then run:
 
 ```yaml
 - name: Conformance against provisioned implementation
