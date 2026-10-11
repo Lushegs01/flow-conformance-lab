@@ -27,14 +27,14 @@ afterEach(async () => {
   }
 });
 describe("actual HTTP scenario evidence", () => {
-  it("reference subset passes all nine scenarios including six distinct header gates", async () => {
+  it("reference subset passes all fifteen scenarios including six distinct header gates", async () => {
     const run = await runSuite({
       target: await start(),
       config,
       authorization,
     });
     expect(counts(run)).toEqual({
-      passed: 9,
+      passed: 15,
       failed: 0,
       inconclusive: 0,
       skipped: 0,
@@ -54,7 +54,18 @@ describe("actual HTTP scenario evidence", () => {
       run.results
         .filter((r) => r.status === "failed")
         .map((r) => r.definition.id),
-    ).toEqual(["AUTH-001", "STATE-001", "REPLAY-001", "REPLAY-002"]);
+    ).toEqual([
+      "AUTH-001",
+      "STATE-001",
+      "REPLAY-001",
+      "REPLAY-002",
+      "AUTH-003",
+      "EXPORT-001",
+    ]);
+    const observed = (id: string) =>
+      run.results.find((r) => r.definition.id === id)!.diagnostic.observed;
+    expect(observed("AUTH-003")).toContain("HTTP 200");
+    expect(observed("EXPORT-001")).toContain("error_id=invalid_export");
     expect(exitCode(run)).toBe(1);
     const replay = await runSuite({
       target,
@@ -97,7 +108,7 @@ describe("actual HTTP scenario evidence", () => {
       authorization,
       signal: controller.signal,
     });
-    expect(counts(cancelled).inconclusive).toBe(9);
+    expect(counts(cancelled).inconclusive).toBe(15);
     expect(exitCode(cancelled)).toBe(2);
   });
 });

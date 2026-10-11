@@ -12,7 +12,7 @@ import {
   type Event,
   type Session,
 } from "../../src/protocol.js";
-import { Transport, type Reply } from "../../src/transport.js";
+import { Transport, TransportError, type Reply } from "../../src/transport.js";
 
 const root = `https://github.com/Flow-Research/jarvis/blob/${SOURCE}/`;
 const cases = [
@@ -70,7 +70,78 @@ const cases = [
     "WorkSession",
     "After completed -> closed, a fresh mutation rejects as sealed_work_session_mutation or mutation_after_closed.",
   ],
+  [
+    "CREATE-001",
+    "Genesis requires objective and Policy",
+    "WorkSession",
+    "Genesis without policy_id rejects as missing_policy and without objective rejects as missing_objective; neither creates a WorkSession.",
+  ],
+  [
+    "HEADERS-002",
+    "Request timestamp tolerance",
+    "Headers",
+    "A mutation timestamped an hour in the past or an hour in the future (tolerance is five minutes past, sixty seconds future) rejects as stale_request_timestamp, leaving the snapshot unchanged.",
+  ],
+  [
+    "HEADERS-003",
+    "Unsupported protocol version",
+    "Headers",
+    "A mutation declaring an unsupported Jarvis-Protocol-Version rejects as unsupported_protocol_version, leaving the snapshot unchanged.",
+  ],
+  [
+    "AUTH-003",
+    "Reads require Actor read authority",
+    "Participants",
+    "Reading the WorkSession as the configured unauthorized Actor rejects as unauthorized_actor without returning the record.",
+  ],
+  [
+    "PATH-001",
+    "Path and body WorkSession binding",
+    "WorkSession",
+    "An event whose body work_session_id differs from the path WorkSession rejects as path_body_id_mismatch, leaving the snapshot unchanged.",
+  ],
+  [
+    "EXPORT-001",
+    "Export refused before a terminal state",
+    "Evidence",
+    "EvidenceManifest export of an active WorkSession rejects as invalid_evidence_export_state, leaving the snapshot unchanged.",
+  ],
 ] as const;
+const fixtures = root + "docs/conformance/fixtures/invalid/";
+const extraReferences: Partial<Record<string, string[]>> = {
+  "CREATE-001": [fixtures + "missing-policy.json"],
+  "HEADERS-002": [
+    root + "docs/protocol/15-openapi-communication-binding.md",
+    fixtures + "stale-request-timestamp.json",
+  ],
+  "EXPORT-001": [fixtures + "invalid-evidence-export-state.json"],
+};
+const custom: Partial<
+  Record<string, { setup: string; reproduction: string[] }>
+> = {
+  "CREATE-001": {
+    setup:
+      "Create an isolated WorkSession with configured human Actor, Workers and Policy and accept one human completion event as a positive control. Then submit genesis bodies that omit policy_id and objective.",
+    reproduction: [
+      "Provision the configured identities and policy in an isolated host tenant.",
+      "Create a valid session using revision 0 and hash:protocol-genesis headers, and complete it.",
+      "Submit a genesis body without policy_id, then one without objective, each with a fresh session ID.",
+      "Expect missing_policy and missing_objective respectively.",
+      "Read each rejected session ID and confirm no WorkSession was created.",
+    ],
+  },
+  "EXPORT-001": {
+    setup:
+      "Create an isolated WorkSession with configured human Actor, Workers and Policy and read it with read headers only. While it is still active, request its EvidenceManifest export with the same read headers. Then accept one human completion event as a positive control.",
+    reproduction: [
+      "Provision the configured identities and policy in an isolated host tenant.",
+      "Create a fresh session using revision 0 and hash:protocol-genesis headers.",
+      "Read the snapshot with read headers only.",
+      "Execute EXPORT-001: GET /work-sessions/{id}/export with read headers only while the session is active; expect invalid_evidence_export_state.",
+      "Read the snapshot again, confirm it is unchanged, then append a valid human completion event.",
+    ],
+  },
+};
 export const definitions: Definition[] = cases.map(
   ([id, name, category, expected]) => ({
     id,
@@ -81,8 +152,9 @@ export const definitions: Definition[] = cases.map(
     purpose: `Exercise running-host behavior: ${name.toLowerCase()}.`,
     requirement: expected,
     setup:
+      custom[id]?.setup ??
       "Create an isolated WorkSession with configured human Actor, Workers and Policy. Read it without mutation-only headers. Accept one human completion event as a positive control.",
-    reproduction: [
+    reproduction: custom[id]?.reproduction ?? [
       "Provision the configured identities and policy in an isolated host tenant.",
       "Create a fresh session using revision 0 and hash:protocol-genesis headers.",
       "Read the snapshot and append a valid human completion event.",
@@ -96,6 +168,7 @@ export const definitions: Definition[] = cases.map(
       root + "docs/protocol/04-work-sessions.md",
       root + "docs/openapi/jarvis-openapi.yaml",
       root + "docs/conformance/checklist.md",
+      ...(extraReferences[id] ?? []),
     ],
   }),
 );
@@ -229,13 +302,23 @@ export class Context {
     );
     return { next, event, headers, reply };
   }
+  exportManifest(id: string): Promise<Reply> {
+    return this.transport.call(
+      "GET",
+      `/work-sessions/${id}/export`,
+      this.reads(),
+    );
+  }
   async reject(
     s: Session,
     event: Event,
     headers: Record<string, string>,
     errors: string[],
   ) {
-    const reply = await this.append(s, event, headers);
+    await this.rejectWith(s, () => this.append(s, event, headers), errors);
+  }
+  async rejectWith(s: Session, send: () => Promise<Reply>, errors: string[]) {
+    const reply = await send();
     const after = await this.read(s.id);
     const parsed = ErrorSchema.safeParse(reply.body);
     assert(
@@ -247,8 +330,47 @@ export class Context {
       `Expected ${errors.join(" or ")} and unchanged state; observed ${detail(reply)}, revision ${s.revision} -> ${after.revision}, status ${s.status} -> ${after.status}, snapshot ${canonical(after) === canonical(s) ? "unchanged" : "changed"}.`,
     );
   }
+  async rejectGenesis(body: Record<string, unknown>, errors: string[]) {
+    const reply = await this.transport.call(
+      "POST",
+      "/work-sessions",
+      this.headers(),
+      body,
+    );
+    let readable: boolean;
+    try {
+      const lookup = await this.transport.call(
+        "GET",
+        `/work-sessions/${String(body.id)}`,
+        this.reads(),
+      );
+      readable = lookup.status === 200;
+    } catch (err) {
+      // A non-JSON answer (for example a plain 404 page) still means no WorkSession is readable.
+      if (err instanceof TransportError && err.code === "non_json_response")
+        readable = false;
+      else throw err;
+    }
+    const parsed = ErrorSchema.safeParse(reply.body);
+    assert(
+      reply.status >= 400 &&
+        reply.status < 500 &&
+        parsed.success &&
+        errors.includes(parsed.data.error_id) &&
+        !readable,
+      `Expected ${errors.join(" or ")} and no WorkSession created; observed ${detail(reply)}, rejected session ID ${readable ? "readable" : "not readable"}.`,
+    );
+  }
 }
 export async function execute(id: string, c: Context): Promise<string> {
+  if (id === "EXPORT-001") {
+    const active = await c.create();
+    await c.rejectWith(active, () => c.exportManifest(active.id), [
+      "invalid_evidence_export_state",
+    ]);
+    await c.accepted(active);
+    return "Export of the active session rejected as invalid_evidence_export_state with an unchanged snapshot; the session then accepted its completion.";
+  }
   const initial = await c.create();
   const accepted = await c.accepted(initial);
   const s = accepted.next;
@@ -343,6 +465,59 @@ export async function execute(id: string, c: Context): Promise<string> {
         c.headers(closed.next),
         ["sealed_work_session_mutation", "mutation_after_closed"],
       );
+      break;
+    }
+    case "CREATE-001": {
+      const gates = [
+        ["policy_id", "missing_policy"],
+        ["objective", "missing_objective"],
+      ] as const;
+      for (const [field, error] of gates) {
+        const body: Record<string, unknown> = {
+          ...createBody(c.config, `ws-${randomUUID()}`),
+        };
+        delete body[field];
+        await c.rejectGenesis(body, [error]);
+      }
+      break;
+    }
+    case "HEADERS-002":
+      for (const offset of [-3600000, 3600000])
+        await c.reject(
+          s,
+          event,
+          {
+            ...c.headers(s),
+            "Jarvis-Request-Timestamp": new Date(
+              Date.now() + offset,
+            ).toISOString(),
+          },
+          ["stale_request_timestamp"],
+        );
+      break;
+    case "HEADERS-003":
+      await c.reject(
+        s,
+        event,
+        { ...c.headers(s), "Jarvis-Protocol-Version": "v99.0" },
+        ["unsupported_protocol_version"],
+      );
+      break;
+    case "AUTH-003":
+      await c.rejectWith(
+        s,
+        () =>
+          c.transport.call("GET", `/work-sessions/${s.id}`, {
+            ...c.reads(),
+            "Jarvis-Actor-Id": c.config.unauthorized_actor_id,
+          }),
+        ["unauthorized_actor"],
+      );
+      break;
+    case "PATH-001": {
+      const misbound = { ...event, work_session_id: `ws-${randomUUID()}` };
+      misbound.event_hash = eventHash(misbound);
+      await c.reject(s, misbound, c.headers(s), ["path_body_id_mismatch"]);
       break;
     }
     default:

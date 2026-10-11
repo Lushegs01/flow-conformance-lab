@@ -7,7 +7,7 @@ Pushing a version tag such as `v0.2.0` runs `.github/workflows/release.yml`. The
 - **Package version** (`version` in `package.json`) identifies a CLI release. Bump it for every release.
 - **Suite version** (`VERSION` in `src/model.ts`) is recorded in every run as `suite_version`. Bump it only when scenario semantics change ([contributing](contributing.md), step 5). `replay` refuses evidence from a different suite version, so a package-only release must leave it alone.
 
-`flow-conformance --version` prints both, for example `0.2.0 (suite 0.1.0)`.
+`flow-conformance --version` prints both, for example `0.3.0 (suite 0.2.0)`.
 
 ## One-time setup
 

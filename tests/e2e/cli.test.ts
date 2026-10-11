@@ -58,7 +58,7 @@ it("CLI executes both hosts, produces parseable JSON, replays, verifies and gene
   ]);
   expect(good.code).toBe(0);
   const passed = JSON.parse(good.stdout);
-  expect(passed.results).toHaveLength(9);
+  expect(passed.results).toHaveLength(15);
   const url = await target(true);
   const bad = await cli(["test", url, "--output", output, "--json"]);
   expect(bad.code).toBe(1);
@@ -106,7 +106,7 @@ it("CLI executes both hosts, produces parseable JSON, replays, verifies and gene
   expect((await cli(["--help"])).code).toBe(0);
   const { version } = JSON.parse(await readFile("package.json", "utf8"));
   expect((await cli(["--version"])).stdout.trim()).toBe(
-    `${version} (suite 0.1.0)`,
+    `${version} (suite 0.2.0)`,
   );
   const authFailure = await cli(
     ["test", url, "--test", "CORE-001", "--output", output, "--json"],

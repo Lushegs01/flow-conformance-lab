@@ -127,7 +127,11 @@ export class Transport {
       },
     };
     try {
-      if (!/^\/work-sessions(?:\/[A-Za-z0-9._:-]+(?:\/events)?)?$/.test(path))
+      if (
+        !/^\/work-sessions(?:\/[A-Za-z0-9._:-]+(?:\/events|\/export)?)?$/.test(
+          path,
+        )
+      )
         throw new TransportError("unrecognized_operation_path");
       const url = new URL(this.target.toString());
       url.pathname = this.target.pathname.replace(/\/$/, "") + path;

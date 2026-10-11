@@ -120,7 +120,10 @@ export function OutcomeChart({
                     <em className={r.status}>{r.status}</em>
                   </span>
                 </span>
-                <span className="column-label">{id}</span>
+                <span className="column-label">
+                  <span>{id.split("-")[0]}</span>
+                  <span>{id.split("-")[1]}</span>
+                </span>
               </button>
             );
           })}

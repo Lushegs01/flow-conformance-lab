@@ -33,22 +33,31 @@ Public security reports remain open: [#133 in-process checkers](https://github.c
 
 ## C. Conformance boundary
 
-Record validation asks if a document satisfies a schema/invariant. Implementation conformance asks if a running host enforces a rule under interaction. Certification/governance assigns authority. This lab performs the second, uses the first as supporting evidence, and never performs the third. Passing nine scenarios cannot establish full Jarvis compatibility or host security.
+Record validation asks if a document satisfies a schema/invariant. Implementation conformance asks if a running host enforces a rule under interaction. Certification/governance assigns authority. This lab performs the second, uses the first as supporting evidence, and never performs the third. Passing fifteen scenarios cannot establish full Jarvis compatibility or host security.
 
 ## D. Behavior matrix
 
-| Requirement                                                 | Existing artifact                                         | Testability                                   | Planned test          |
-| ----------------------------------------------------------- | --------------------------------------------------------- | --------------------------------------------- | --------------------- |
-| Genesis, reads, revision and event linkage                  | OpenAPI create/get/append; WorkSession revision section   | HTTP + visible snapshot                       | CORE-001              |
-| Six required mutation headers before changes                | Checklist; missing-header fixtures                        | HTTP rejection + before/after                 | HEADERS-001           |
-| Authorized Actor before mutation                            | unauthorized-actor fixture                                | credential-to-actor provisioning assumption   | AUTH-001              |
-| Body Actor equals header                                    | OpenAPI actor-body binding                                | HTTP + snapshot                               | AUTH-002              |
-| Current expected revision                                   | stale-work-session-revision fixture                       | multi-operation sequence                      | STATE-001             |
-| Previous hash equals current head                           | invalid-previous-event-hash fixture                       | HTTP + snapshot                               | CHAIN-001             |
-| Exact accepted request replay is side-effect free           | WorkSessions revision/idempotency rules                   | replay with stale headers                     | REPLAY-001            |
-| Reused key with changed payload rejects                     | duplicate_idempotency_key_mismatch (no dedicated fixture) | HTTP + snapshot                               | REPLAY-002            |
-| Closed session rejects fresh mutation                       | sealed-work-session fixture; transition table             | complete, close, append                       | STATE-002             |
-| Policy, Review, Takeover, evidence, learning and extensions | Checklist and record fixtures                             | additional host capabilities/scenarios needed | Deferred, NOT covered |
+| Requirement                                                      | Existing artifact                                                        | Testability                                   | Planned test            |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------ | --------------------------------------------- | ----------------------- |
+| Genesis, reads, revision and event linkage                       | OpenAPI create/get/append; WorkSession revision section                  | HTTP + visible snapshot                       | CORE-001                |
+| Six required mutation headers before changes                     | Checklist; missing-header fixtures                                       | HTTP rejection + before/after                 | HEADERS-001             |
+| Authorized Actor before mutation                                 | unauthorized-actor fixture                                               | credential-to-actor provisioning assumption   | AUTH-001                |
+| Body Actor equals header                                         | OpenAPI actor-body binding                                               | HTTP + snapshot                               | AUTH-002                |
+| Current expected revision                                        | stale-work-session-revision fixture                                      | multi-operation sequence                      | STATE-001               |
+| Previous hash equals current head                                | invalid-previous-event-hash fixture                                      | HTTP + snapshot                               | CHAIN-001               |
+| Exact accepted request replay is side-effect free                | WorkSessions revision/idempotency rules                                  | replay with stale headers                     | REPLAY-001              |
+| Reused key with changed payload rejects                          | duplicate_idempotency_key_mismatch (no dedicated fixture)                | HTTP + snapshot                               | REPLAY-002              |
+| Closed session rejects fresh mutation                            | sealed-work-session fixture; transition table                            | complete, close, append                       | STATE-002               |
+| Genesis requires objective and Policy                            | missing-policy fixture; WorkSession gate (missing_objective)             | rejected genesis + rejected ID unreadable     | CREATE-001              |
+| Request timestamp outside tolerance rejects                      | stale-request-timestamp fixture; binding: 5 min past, 60 s future        | ±1 hour mutation + snapshot                   | HEADERS-002             |
+| Unsupported protocol version rejects                             | Participant gate (unsupported_protocol_version)                          | HTTP rejection + snapshot                     | HEADERS-003             |
+| Reads verify Actor read authority                                | Checklist read-header rules; getWorkSession/export descriptions          | read as unauthorized Actor                    | AUTH-003                |
+| Event body WorkSession equals path                               | OpenAPI `x-jarvis-path-body-id-match` on appendJarvisEvent               | HTTP rejection + snapshot                     | PATH-001                |
+| Export refused before a terminal state                           | invalid-evidence-export-state fixture; Export Eligibility                | export read of active session + snapshot      | EXPORT-001              |
+| Protocol error envelope (seven fields, no extras)                | Checklist "Required Error Envelope"                                      | every expected rejection is parsed strictly   | All rejection scenarios |
+| Successful export, host-private export fields                    | forbidden-host-private-export-field fixture; `x-jarvis-forbidden-fields` | needs Contributions and evidence items        | Deferred, NOT covered   |
+| PolicyDecision, Request, Review, Takeover                        | Checklist gates and fixtures                                             | needs an AgentWorker Actor credential         | Deferred, NOT covered   |
+| Contribution, learning, memory/skills, OutcomeReport, extensions | Checklist and record fixtures                                            | additional host capabilities/scenarios needed | Deferred, NOT covered   |
 
 ## E. Risks and assumptions
 
@@ -64,3 +73,16 @@ Record validation asks if a document satisfies a schema/invariant. Implementatio
 ### Discovered specification inconsistency: transition payload
 
 The WorkSessions prose says state-change payloads record `from_status`, `to_status`, `reason`, `previous_revision`, and `next_revision`. At this same commit, OpenAPI's `JarvisEventPayload` is closed (`additionalProperties: false`) and does not admit those fields. The golden fixture also uses object/action/summary rather than those richer fields. This lab explicitly selects the **published HTTP binding profile** and sends object_type/object_id/action, matching the OpenAPI shape and upstream SDK validator. It does not claim to satisfy the incompatible prose payload requirement. Hosts requiring the richer form will fail the positive-control prerequisite, making affected scenarios inconclusive. Resolution needs an upstream contract change; the lab does not invent an extension or silently treat one document as universal authority. Every run carries this limitation. A ready-to-post upstream issue with permalinks and an SDK reproduction is drafted in [upstream/worksession-transition-payload.md](upstream/worksession-transition-payload.md).
+
+### Coverage expansion notes (suite 0.2.0)
+
+Suite 0.2.0 adds six scenarios that need no provisioning beyond the original config. Each is backed by an upstream fixture or an explicit MUST with a named error ID. The following areas were researched at the same commit and deliberately deferred:
+
+- **PolicyDecision, Request, Review and Takeover.** The fixtures act as an AgentWorker Actor (`actor-agent-invalid`), while the lab's config holds a single credential acting as the human Actor. Covering these gates needs a new provisioning contract: an agent-bound Actor and a credential that may act as it. That is an operator-facing change, so it is left for a separate decision.
+- **Successful export and host-private export fields.** A schema-valid EvidenceManifest needs at least one Contribution and one evidence item (`contribution_refs` and `evidence_item_refs` have `minItems: 1`). The golden-path Contribution's `event_refs` include `event-contribution-recorded`, the event the host creates when it records that Contribution, so a client cannot know the ID in advance. No operation records evidence items directly. Asserting a successful export would therefore rest on guesses, and only the refusal from an active session is tested. The subset demo host answers terminal exports with `invalid_export` for the same reason.
+- **HEADERS-002 boundaries.** The scenario uses timestamps an hour in the past and an hour in the future, well outside the five-minute and sixty-second tolerances. Probing the exact boundaries would make results depend on clock agreement between runner and host. A host that allows, say, five minutes into the future still passes, even though the binding says hosts must not be looser.
+- **AUTH-003 scope.** Only the snapshot read is challenged. Whether a host checks read authority before or after the export state is not specified, so an unauthorized export read of an active session is not asserted.
+
+### Discovered specification inconsistency: final export fields
+
+The Export Eligibility section of the WorkSessions prose (`04-work-sessions.md`, L634–L645) says every final export records `work_session_id`, `status`, `revision`, `event_chain_root`, `last_event_hash`, `exported_at`, `generated_by_actor_id` and `limitations`. The closed OpenAPI `EvidenceManifest` schema (L2220 onwards, `additionalProperties: false`) has no `status`, `revision`, `last_event_hash` or `exported_at`. It does have `generated_at` and `limitation_refs`, which may be intended equivalents. The lab asserts none of these prose-only fields.
