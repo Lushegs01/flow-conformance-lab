@@ -2,8 +2,23 @@
   "name": "flow-conformance-lab",
   "version": "0.1.0",
   "description": "Independent black-box Jarvis conformance evidence; not certification",
+  "keywords": [
+    "jarvis",
+    "conformance",
+    "protocol",
+    "interoperability",
+    "testing",
+    "cli"
+  ],
+  "homepage": "https://github.com/Lushegs01/flow-conformance-lab#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Lushegs01/flow-conformance-lab.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Lushegs01/flow-conformance-lab/issues"
+  },
   "type": "module",
-  "private": true,
   "license": "MIT",
   "engines": {
     "node": ">=22.12"
@@ -11,6 +26,15 @@
   "bin": {
     "flow-conformance": "dist/apps/cli/index.js"
   },
+  "files": [
+    "dist/apps/cli/",
+    "dist/apps/web/inspector.js",
+    "dist/apps/web/inspector.css",
+    "dist/src/",
+    "dist/suites/",
+    "schemas/",
+    "examples/target.json"
+  ],
   "scripts": {
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -21,7 +45,8 @@
     "host:broken": "node dist/examples/host.js --broken --port 4001",
     "flow": "node dist/apps/cli/index.js",
     "demo": "node dist/scripts/demo.js",
-    "vercel-build": "npm run build && npm run demo && node scripts/prepare-vercel.mjs"
+    "vercel-build": "npm run build && npm run demo && node scripts/prepare-vercel.mjs",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "commander": "14.0.1",

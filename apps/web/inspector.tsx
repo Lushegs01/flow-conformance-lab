@@ -19,6 +19,7 @@ const FILTERS = {
   skipped: "Skipped",
 } as const;
 
+const PROJECT_URL = "https://github.com/Lushegs01/flow-conformance-lab";
 const firstFailure = (run: Run) =>
   run.results.find((r) => r.status === "failed")?.definition.id;
 const motion = (): ScrollBehavior =>
@@ -108,7 +109,7 @@ function StatCard({
   );
 }
 
-function App({ initial }: { initial: Run }) {
+function App({ initial, sample }: { initial: Run; sample: boolean }) {
   const [run, setRun] = useState(initial);
   const [compare, setCompare] = useState<Run>();
   const [selected, setSelected] = useState(
@@ -237,6 +238,24 @@ function App({ initial }: { initial: Run }) {
         </a>
       </nav>
       <div className="page">
+        {sample && run === initial && (
+          <aside className="sample-banner" aria-label="About this report">
+            <span className="sample-icon" aria-hidden="true">
+              <Icon name="alert" size={16} />
+            </span>
+            <p>
+              <strong>Sample report.</strong> This is a demonstration run
+              against one of the lab's bundled test hosts, not a real
+              implementation. This page is an offline evidence inspector: it
+              cannot test servers from your browser. To test your own Jarvis
+              host, run the command-line tool.
+            </p>
+            <a href={`${PROJECT_URL}#readme`} target="_blank" rel="noreferrer">
+              How to run it
+              <Icon name="arrow" size={14} />
+            </a>
+          </aside>
+        )}
         <header className="page-head" id="overview">
           <div className="headline">
             <div className="eyebrow">
@@ -750,7 +769,9 @@ try {
   const run = RunSchema.parse(
     JSON.parse(document.getElementById("run-data")!.textContent!),
   );
-  createRoot(mount).render(<App initial={run} />);
+  createRoot(mount).render(
+    <App initial={run} sample={mount.dataset.sample === "true"} />,
+  );
 } catch {
   mount.textContent =
     "Invalid conformance evidence. Use CLI inspect to validate the run.";
