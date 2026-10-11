@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { Command, CommanderError } from "commander";
 import { resolve } from "node:path";
+import { readFileSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
 import {
   ConfigSchema,
@@ -20,10 +21,14 @@ import {
   saveRun,
 } from "../../src/evidence.js";
 import { report } from "../../src/report.js";
+// The package version identifies the CLI release; VERSION is the scenario suite version recorded in runs.
+const { version: packageVersion } = JSON.parse(
+  readFileSync(new URL("../../../package.json", import.meta.url), "utf8"),
+) as { version: string };
 const program = new Command()
   .name("flow-conformance")
   .description(NOTICE)
-  .version(VERSION)
+  .version(`${packageVersion} (suite ${VERSION})`)
   .exitOverride();
 program.configureOutput({
   outputError: () =>
@@ -177,7 +182,9 @@ program
 program
   .command("version")
   .action(() =>
-    output(`flow-conformance ${VERSION}; Jarvis v0.1 at ${SOURCE}`),
+    output(
+      `flow-conformance ${packageVersion} (suite ${VERSION}); Jarvis v0.1 at ${SOURCE}`,
+    ),
   );
 program
   .command("inspect <run>")

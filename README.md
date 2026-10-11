@@ -2,6 +2,8 @@
 
 Independent black-box conformance evidence for running Jarvis implementations. The CLI sends real HTTP requests, challenges protocol gates, reads resulting state and records reproducible diagnostics. **This is not an official Flow Research service or certification system.** A passing run describes the executed scenarios; full compatibility remains unproven.
 
+**Sample report:** [flow-conformance-lab.vercel.app](https://flow-conformance-lab.vercel.app) shows the offline evidence inspector with a demo run against the lab's intentionally broken test host. It is not a browser-based scanner and cannot test your server; testing happens only through the CLI.
+
 ## Why it exists
 
 A structurally valid record cannot prove that a host rejects an unauthorized Actor, protects its current revision, or handles a retried mutation without a second write. Jarvis's existing SDK/CLI validators check records and fixtures. This lab tests those observable implementation behaviors through the published HTTP binding.
@@ -48,6 +50,8 @@ node dist/apps/cli/index.js test http://127.0.0.1:4000 --verbose
 On macOS/Linux use `export FLOW_AUTHORIZATION='Bearer disposable-local-demo'`. The demo credential is only for the local subset host. Production credentials belong in your secret environment mechanism, never CLI arguments or config files. `npm run host:broken` uses port 4001.
 
 Use `node dist/apps/cli/index.js` without installing globally. Optional `npm link` registers the `flow-conformance` command used below.
+
+Tagged releases publish the CLI to npm as `flow-conformance-lab` and attach the same tarball to a GitHub release (see [releasing](docs/releasing.md)). After the first release, `npm install -g flow-conformance-lab` installs the `flow-conformance` command; `npx --package flow-conformance-lab flow-conformance list-tests` runs it without installing. The installed CLI has no bundled default config, so always pass `--config`.
 
 ```sh
 flow-conformance list-tests

@@ -34,7 +34,7 @@ for (const broken of [false, true]) {
       authorization,
     });
     const dir = await saveRun(run, root);
-    await report(run, dir);
+    await report(run, dir, { sample: true });
     await writeFile(
       resolve(dir, "claim.json"),
       JSON.stringify(claim(run), null, 2),
@@ -66,7 +66,7 @@ for (const broken of [false, true]) {
         replayOf: run.run_id,
       });
       const replayDir = await saveRun(replay, root);
-      await report(replay, replayDir);
+      await report(replay, replayDir, { sample: true });
       artifacts.replay = replayDir;
       if (replay.results[0]?.status !== "failed")
         throw new Error("Demo replay did not reproduce failure");

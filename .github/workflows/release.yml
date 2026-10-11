@@ -1,0 +1,44 @@
+name: Release
+on:
+  push:
+    tags:
+      - "v*.*.*"
+permissions:
+  contents: read
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Store NPM_TOKEN in this environment and add required reviewers to gate publishing.
+    environment: release
+    permissions:
+      contents: write # create the GitHub release
+      id-token: write # npm provenance attestation
+    env:
+      FLOW_CONFORMANCE_LOOPBACK_ONLY: "1"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4, resolved 2026-10-06
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+      - name: Tag must match package.json version
+        run: test "v$(node -p 'require("./package.json").version')" = "$GITHUB_REF_NAME"
+      - run: npm ci --ignore-scripts
+      - run: npm run build
+      - run: npm run format:check
+      - run: npm test
+      - run: npm run demo
+      - name: Pack the release tarball
+        run: npm pack --ignore-scripts
+      - name: Publish the tarball to npm
+        run: npm publish ./flow-conformance-lab-*.tgz --provenance --access public --ignore-scripts
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Attach the same tarball to a GitHub release
+        run: gh release create "$GITHUB_REF_NAME" ./flow-conformance-lab-*.tgz --verify-tag --generate-notes --title "$GITHUB_REF_NAME"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}

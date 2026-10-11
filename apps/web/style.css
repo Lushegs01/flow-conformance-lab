@@ -163,6 +163,51 @@ pre {
   opacity: 1;
 }
 
+/* Sample-report banner */
+.sample-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 24px;
+  padding: 14px 18px;
+  color: var(--text);
+  background: var(--blue-soft);
+  border-radius: 20px;
+}
+.sample-banner p {
+  flex: 1;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.sample-icon {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  color: #fff;
+  background: var(--blue);
+  border-radius: 50%;
+}
+.sample-banner a {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #fff;
+  text-decoration: none;
+  white-space: nowrap;
+  background: var(--blue);
+  border-radius: 999px;
+}
+.sample-banner a:hover {
+  background: var(--blue-hover);
+}
+
 /* Page header */
 .page {
   max-width: 1680px;
@@ -1508,6 +1553,13 @@ footer {
   .page-head {
     flex-direction: column;
     margin-bottom: 20px;
+  }
+  .sample-banner {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+  .sample-banner p {
+    flex-basis: calc(100% - 46px);
   }
   .actions {
     width: 100%;
