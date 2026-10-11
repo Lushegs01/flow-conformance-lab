@@ -11,8 +11,9 @@ Build first: end-to-end tests deliberately execute the compiled CLI in child pro
 
 ## Evidence of the initial implementation
 
-- Reference target: nine selected scenarios pass. HEADERS-001 checks all six required mutation headers independently.
-- Broken target: AUTH-001, STATE-001, REPLAY-001 and REPLAY-002 fail; the other five scenarios pass. Replay reproduces the stale-revision violation against fresh state.
+- Reference target: all fifteen scenarios pass. HEADERS-001 checks all six required mutation headers independently.
+- Broken target: AUTH-001, STATE-001, REPLAY-001, REPLAY-002, AUTH-003 and EXPORT-001 fail; the other nine scenarios pass. Replay reproduces the stale-revision violation against fresh state.
+- CREATE-001, HEADERS-002, HEADERS-003 and PATH-001 are not exercised by the broken target. Each was checked by removing the matching enforcement from a copy of the reference host and confirming the scenario fails.
 - Unit coverage: URL/address restrictions, redaction, mutation retry discipline, redirect refusal, response size/time/JSON-depth limits, canonical JSON hashing and an independently generated upstream SDK event vector.
 - Integration coverage: actual HTTP sequences, exact expected failing IDs, cancellation, failed setup, evidence write/read, per-test tamper detection, claim and issue boundaries.
 - CLI coverage: success/failure/inconclusive exits, selection/configuration errors, machine JSON, inspect, report, replay requiring explicit target, issue output, claims, and script-closing text in generated HTML.

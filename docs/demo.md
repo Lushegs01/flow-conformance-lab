@@ -7,9 +7,9 @@ Prepare with `npm ci --ignore-scripts`, `npm run build` and `npm test`. Set a di
 | 00:00 | “Record validation checks a document. This tool sends requests to a running host and checks whether the host enforces the selected protocol rules. It produces evidence, not certification.” |
 | 00:20 | Start `npm run host:reference` in terminal 1.                                                                                                                                                |
 | 00:30 | Run `node dist/apps/cli/index.js test http://127.0.0.1:4000` in terminal 2.                                                                                                                  |
-| 00:45 | Show nine passed scenarios and the generated evidence directory. “Only the declared subset was tested.”                                                                                      |
+| 00:45 | Show fifteen passed scenarios and the generated evidence directory. “Only the declared subset was tested.”                                                                                   |
 | 01:00 | Start `npm run host:broken` in terminal 3.                                                                                                                                                   |
-| 01:10 | Run `node dist/apps/cli/index.js test http://127.0.0.1:4001`. Show four failures and exit 1.                                                                                                 |
+| 01:10 | Run `node dist/apps/cli/index.js test http://127.0.0.1:4001`. Show six failures and exit 1.                                                                                                  |
 | 01:25 | Open `<bad>/report/index.html`; filter failed tests.                                                                                                                                         |
 | 01:35 | Select STATE-001. Show expected stale rejection versus HTTP 201, revision 2 -> 3. Expand its request sequence to see the stale header and subsequent read.                                   |
 | 01:45 | Run `node dist/apps/cli/index.js replay <bad> --base-url http://127.0.0.1:4001 --test STATE-001`. The same behavior fails with fresh state.                                                  |

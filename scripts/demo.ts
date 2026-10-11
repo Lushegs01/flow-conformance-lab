@@ -50,7 +50,16 @@ for (const broken of [false, true]) {
       counts(run).inconclusive ||
       JSON.stringify(failures) !==
         JSON.stringify(
-          broken ? ["AUTH-001", "STATE-001", "REPLAY-001", "REPLAY-002"] : [],
+          broken
+            ? [
+                "AUTH-001",
+                "STATE-001",
+                "REPLAY-001",
+                "REPLAY-002",
+                "AUTH-003",
+                "EXPORT-001",
+              ]
+            : [],
         )
     )
       throw new Error(

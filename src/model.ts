@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const SOURCE = "e0c4842a5fc62b304e0af9cbc823d0be1eb72adb";
-export const VERSION = "0.1.0";
+export const VERSION = "0.2.0";
 export const NOTICE =
   "Independent conformance evidence. Compatibility not proven. This is not an official certification.";
 const id = z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/);

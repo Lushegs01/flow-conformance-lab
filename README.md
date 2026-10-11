@@ -8,7 +8,7 @@ Independent black-box conformance evidence for running Jarvis implementations. T
 
 A structurally valid record cannot prove that a host rejects an unauthorized Actor, protects its current revision, or handles a retried mutation without a second write. Jarvis's existing SDK/CLI validators check records and fixtures. This lab tests those observable implementation behaviors through the published HTTP binding.
 
-The initial suite covers **nine scenarios**: creation/read/event acceptance, six required header gates, unauthorized Actor rejection, body/header Actor binding, stale revision, incorrect previous hash, exact replay, changed-payload replay and closed-session immutability. It pins Jarvis wire version `v0.1` at commit `e0c4842a5fc62b304e0af9cbc823d0be1eb72adb` (release `v0.1.0`, Protocol Alpha).
+The suite covers **fifteen scenarios**: creation/read/event acceptance, six required header gates, unauthorized Actor rejection, body/header Actor binding, stale revision, incorrect previous hash, exact replay, changed-payload replay, closed-session immutability, genesis without objective or Policy, request timestamp tolerance, unsupported protocol version, Actor read authority, path/body WorkSession binding, and refusal of EvidenceManifest export before a terminal state. It pins Jarvis wire version `v0.1` at commit `e0c4842a5fc62b304e0af9cbc823d0be1eb72adb` (release `v0.1.0`, Protocol Alpha).
 
 ## How it works
 
@@ -77,15 +77,15 @@ Loopback testing accepts explicit `127.0.0.1` or `[::1]`. Remote testing require
 ## Example output
 
 ```text
-Reference subset host 0.1.0 | Jarvis v0.1 | suite 0.1.0
-9 tests: 9 passed, 0 failed, 0 skipped, 0 inconclusive
+Reference subset host 0.1.0 | Jarvis v0.1 | suite 0.2.0
+15 tests: 15 passed, 0 failed, 0 skipped, 0 inconclusive
 Independent conformance evidence. Compatibility not proven.
 ```
 
-The intentionally broken host produces four predictable failures:
+The intentionally broken host produces six predictable failures:
 
 ```text
-9 tests: 5 passed, 4 failed, 0 skipped, 0 inconclusive
+15 tests: 9 passed, 6 failed, 0 skipped, 0 inconclusive
 
 STATE-001 FAILED — Stale revision after accepted mutation
 Expected: stale_work_session_revision and unchanged state
@@ -95,7 +95,7 @@ Possible cause: missing or incorrectly ordered host validation;
 the internal cause cannot be determined externally.
 ```
 
-It also fails AUTH-001, REPLAY-001 and REPLAY-002. Broken behavior comes from omitted enforcement, not hardcoded test results. Both targets implement only this subset, not a complete Jarvis host.
+It also fails AUTH-001, REPLAY-001, REPLAY-002, AUTH-003 (it returns the record to an unauthorized Actor) and EXPORT-001 (it skips the export state check). Broken behavior comes from omitted enforcement, not hardcoded test results. Both targets implement only this subset, not a complete Jarvis host.
 
 ## Evidence and replay
 
@@ -114,7 +114,7 @@ Replay executes the recorded test selection/config with new session IDs, keys an
 
 ## Claims and exit codes
 
-`claim` generates a **SELF-ASSERTED COMPATIBILITY CLAIM** artifact using the upstream six-field layout with `Verifier: self-attested`. It explicitly says **Compatibility Not Proven**; even nine passing tests cover only the selected subset. Lab counts and versions are separate evidence metadata, not invented upstream governance fields. `issue` only writes a reviewable draft and never publishes it.
+`claim` generates a **SELF-ASSERTED COMPATIBILITY CLAIM** artifact using the upstream six-field layout with `Verifier: self-attested`. It explicitly says **Compatibility Not Proven**; even fifteen passing tests cover only the selected subset. Lab counts and versions are separate evidence metadata, not invented upstream governance fields. `issue` only writes a reviewable draft and never publishes it.
 
 | Exit | Meaning for test/replay                                                                       |
 | ---- | --------------------------------------------------------------------------------------------- |
@@ -128,7 +128,7 @@ Unknown or empty selections fail configuration; an empty suite cannot pass. Offl
 
 The runner executes no target code. Requests have wall-clock deadlines, 64 KiB response limits, one-at-a-time execution, cancellation, no retries, no redirects, verified TLS, address pinning and no ambient proxy forwarding. Credentials and sensitive keys are redacted before persistence; malformed response bytes are discarded. Responses remain untrusted data. See [security controls and review](docs/security.md) before using real host data.
 
-This is a useful initial conformance subset, **not a production readiness or security attestation**. It does not test PolicyDecision ordering, Requests/Review/Takeover, Contributions, EvidenceManifest export, learning, memory/skills, OutcomeReport, extensions or Workstream. It cannot see hidden side effects, prove server honesty or audit an entire event log.
+This is a useful initial conformance subset, **not a production readiness or security attestation**. It does not test PolicyDecision ordering, Requests/Review/Takeover, Contributions, successful EvidenceManifest export or its host-private-field rule (only the refusal before a terminal state), learning, memory/skills, OutcomeReport, extensions or Workstream. It cannot see hidden side effects, prove server honesty or audit an entire event log.
 
 One pinned-source ambiguity matters: WorkSession prose requires richer transition payload fields that the closed OpenAPI schema excludes. This suite follows the HTTP schema/fixture shape and records that limitation in every run. See the source matrix and findings in [research](docs/research.md), then [architecture](docs/architecture.md), [testing](docs/testing.md), [compatibility](docs/compatibility.md) and [two-minute demonstration](docs/demo.md).
 

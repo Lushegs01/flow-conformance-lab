@@ -27,11 +27,11 @@ export function createHost(options: {
       });
       res.end(JSON.stringify(body));
     };
-    const fail = (id: string, field = "request") =>
+    const fail = (id: string, field = "request", objectType = "work_session") =>
       send(400, {
         error_id: id,
         protocol_version: "v0.1",
-        object_type: "work_session",
+        object_type: objectType,
         field,
         reason: `Rejected: ${id}`,
         remediation: "Correct the request and use current authorized state.",
@@ -60,9 +60,10 @@ export function createHost(options: {
         fail("unauthorized_actor");
         return;
       }
-      const match = /^\/work-sessions\/([A-Za-z0-9._:-]+)(\/events)?$/.exec(
-        req.url ?? "",
-      );
+      const match =
+        /^\/work-sessions\/([A-Za-z0-9._:-]+)(\/events|\/export)?$/.exec(
+          req.url ?? "",
+        );
       if (req.method === "GET" && match && !match[2]) {
         const s = sessions.get(match[1]!);
         if (!s) {
@@ -72,9 +73,27 @@ export function createHost(options: {
         send(200, s);
         return;
       }
+      if (req.method === "GET" && match?.[2] === "/export") {
+        const s = sessions.get(match[1]!);
+        if (!s) {
+          fail("unknown_state");
+          return;
+        }
+        // Broken mode omits the export state gate.
+        if (
+          !options.broken &&
+          !["completed", "failed", "cancelled", "closed"].includes(s.status)
+        ) {
+          fail("invalid_evidence_export_state", "status", "evidence_manifest");
+          return;
+        }
+        // The subset host records no Contributions or evidence items, so it cannot build a schema-valid EvidenceManifest.
+        fail("invalid_export", "evidence_item_refs", "evidence_manifest");
+        return;
+      }
       if (
         req.method !== "POST" ||
-        (req.url !== "/work-sessions" && !match?.[2])
+        (req.url !== "/work-sessions" && match?.[2] !== "/events")
       ) {
         send(404, { error: "not_found" });
         return;
@@ -94,9 +113,11 @@ export function createHost(options: {
       const timestamp = Date.parse(
         String(req.headers["jarvis-request-timestamp"]),
       );
+      // Tolerance is five minutes in the past and sixty seconds in the future.
       if (
         !Number.isFinite(timestamp) ||
-        Math.abs(Date.now() - timestamp) > 300000
+        Date.now() - timestamp > 300000 ||
+        timestamp - Date.now() > 60000
       ) {
         fail("stale_request_timestamp");
         return;
@@ -141,6 +162,15 @@ export function createHost(options: {
         return;
       }
       if (req.url === "/work-sessions") {
+        const fields = (body ?? {}) as Record<string, unknown>;
+        if (typeof fields.objective !== "string" || !fields.objective) {
+          fail("missing_objective", "objective");
+          return;
+        }
+        if (typeof fields.policy_id !== "string" || !fields.policy_id) {
+          fail("missing_policy", "policy_id");
+          return;
+        }
         const parsed = SessionSchema.safeParse(body);
         if (!parsed.success) {
           fail("invalid_transition");
